@@ -4,32 +4,27 @@ using UnityEngine;
 
 public class Card : MonoBehaviour
 {
-    public AudioClip clip;
-    public AudioSource audioSource;
-
     public SpriteRenderer frontImage;
     public Animator anim;
 
     public GameObject front;
     public GameObject back;
-
+  
     public int idx;
+    float invokeTime;
 
-    void Start()
-    {
-        audioSource = GetComponent<AudioSource>();
-    }
-
+    int level;
     public void Setting(int number)
     {
         idx = number;
         frontImage.sprite = Resources.Load<Sprite>($"{idx}");
+        level = StageManager.instance.stage;
+        invokeTime = Mathf.Lerp(1, 0.5f, (level - 1) / 4);
     }
 
     public void OpenCard()
     {
-        audioSource.PlayOneShot(clip);
-
+        AudioManager.instance.PlaySfx(AudioManager.Sfx.Flip);
         anim.SetBool("isOpen", true);
         front.SetActive(true);
         back.SetActive(false);
@@ -47,7 +42,7 @@ public class Card : MonoBehaviour
 
     public void DestroyCard()
     {
-        Invoke("DestroyInvoke", 1f);
+        Invoke("DestroyInvoke", invokeTime);
     }
 
     void DestroyInvoke()
@@ -58,7 +53,7 @@ public class Card : MonoBehaviour
 
     public void CloseCard()
     {
-        Invoke("CloseInvoke", 1f);
+        Invoke("CloseInvoke", invokeTime);
     }
 
     void CloseInvoke()

@@ -1,17 +1,20 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 public class AudioManager : MonoBehaviour
 {
     public static AudioManager instance;
 
-    AudioSource audioSource;
+    public AudioClip[] bgmClip;
+    AudioSource bgmPlayer;
 
-    public AudioClip idleClip;
-    public AudioClip fastClip;
+    public AudioClip[] sfxClips;
+    AudioSource[] sfxPlayer;
+    public int channels;
 
-    bool isFast;
-    bool isStop;
+    public enum Bgm { Normal, Fast };
+    public enum Sfx { True, False, Click, Flip, Over, Retry };
 
     private void Awake()
     {
@@ -19,7 +22,7 @@ public class AudioManager : MonoBehaviour
         {
             instance = this;
             DontDestroyOnLoad(gameObject);
-            SceneManager.sceneLoaded += OnSceneLoaded;
+            Init();
         }
         else
         {
@@ -27,55 +30,49 @@ public class AudioManager : MonoBehaviour
         }
     }
 
-    void Start()
+    private void Start()
     {
-        audioSource = GetComponent<AudioSource>();
-        playClip(idleClip);
+        ChangeBgm(Bgm.Normal);
     }
 
-    void Update()
+    void Init()
     {
-        if (GameManager.instance == null) return;
+        GameObject bgmObject = new GameObject("BgmPlayer");
+        bgmObject.transform.parent = transform;
+        bgmPlayer = bgmObject.AddComponent<AudioSource>();
+        bgmPlayer.loop = true;
+        bgmPlayer.playOnAwake = false;
 
-        if (!isFast && GameManager.instance.time < 20 && GameManager.instance.time >= 0)
+        GameObject sfxObject = new GameObject("SfxPlayer");
+        sfxObject.transform.parent = transform;
+        sfxPlayer = new AudioSource[channels];
+        for (int i = 0; i < channels; i++)
         {
-            playClip(fastClip);
-            isFast = true;
-        }
-        else if (!isStop && GameManager.instance.time < 0)
-        {
-            audioSource.Stop();
-            isStop = true;
-        }
-    }
-
-    void OnSceneLoaded(Scene scene, LoadSceneMode mode)
-    {
-        if (scene.name == "ClearScene")
-        {
-            isFast = false;
-            isStop = false;
-            playClip(idleClip);
+            sfxPlayer[i] = sfxObject.AddComponent<AudioSource>();
+            sfxPlayer[i].playOnAwake = false;
         }
     }
 
-    public void playIdle()
+    public void ChangeBgm(Bgm bgm)
     {
-        isFast = false;
-        isStop = false;
-        playClip(idleClip);
+        if (bgmPlayer.clip != bgmClip[(int)bgm])
+        {
+            bgmPlayer.clip = bgmClip[(int)bgm];
+            bgmPlayer.Play();
+        }
+        else return;
     }
 
-    public void playClip(AudioClip clip)
+    public void PlaySfx(Sfx sfx)
     {
-        if (audioSource.clip == clip && audioSource.isPlaying) return;
+        for (int i = 0; i < channels; i++)
+        {
+            if (sfxPlayer[i].isPlaying)
+                continue;
 
-        audioSource.clip = clip;
-        audioSource.Play();
-    }
-
-    private void OnDestroy()
-    {
-        SceneManager.sceneLoaded -= OnSceneLoaded;
+            sfxPlayer[i].clip = sfxClips[(int)sfx];
+            sfxPlayer[i].Play();
+            break;
+        }
     }
 }

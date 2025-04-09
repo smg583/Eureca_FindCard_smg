@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Animations;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
@@ -9,20 +8,20 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager instance;
 
-    public AudioSource audioSource;
-    public AudioClip trueClip;
-    public AudioClip falseClip;
-    public AudioClip overClip;
+    public Text timeTxt;
+    public GameObject EndPanel;
 
     public Card firstCard;
     public Card secondCard;
-    int cardCount = 20;
 
-    public Text timeTxt;
-    public GameObject endTxt;
+    int cardCount = 20;
+    float warningTime;
     public float time;
 
-    bool isOver = false;
+    float level = StageManager.instance.stage;
+
+    bool isFast = false;
+    bool isPlay = false;
 
     private void Awake()
     {
@@ -30,59 +29,72 @@ public class GameManager : MonoBehaviour
         {
             instance = this;
         }
+        isPlay = true;
     }
 
     void Start()
     {
-        Time.timeScale = 1f;
-        time = 60f;
-        audioSource = GetComponent<AudioSource>();
-        
-        if (AudioManager.instance != null)
-        {
-            AudioManager.instance.playIdle();
-        }
+        time = Mathf.Lerp(60, 30, (level - 1) / 4);
+        warningTime = time / 3;
     }
 
     void Update()
     {
-        if (isOver) return;
-
-        time -= Time.deltaTime;
-        timeTxt.text = time.ToString("N2");
-
-        if (time < 0)
+        if (isPlay)
         {
-            isOver = true;
-            timeTxt.text = "Failed";
-            Time.timeScale = 0;
-            audioSource.PlayOneShot(overClip);
-            endTxt.SetActive(true);
+            if (!isFast && time < warningTime)
+            {
+                Faster();
+            }
+            if (time < 0)
+            {
+                GameOver();
+            }
+            if (cardCount == 0)
+            {
+                GameClear();
+            }
 
-            DestroyAllCard();
+            timeTxt.text = time.ToString("N2");
+            time -= Time.deltaTime;
         }
+    }
+
+    void Faster()
+    {
+        isFast = true;
+        AudioManager.instance.ChangeBgm(AudioManager.Bgm.Fast);
+    }
+
+    void GameOver()
+    {
+        isPlay = false;
+        DestroyAllCard();
+        EndPanel.SetActive(true);
+        AudioManager.instance.PlaySfx(AudioManager.Sfx.Over);
+        time = 0;
+    }
+
+    void GameClear()
+    {
+        isPlay = false;
+        MySceneManager.instance.GoClear();
     }
 
     public void Matched()
     {
         if (firstCard.idx == secondCard.idx)
         {
-            audioSource.PlayOneShot(trueClip);
-
+            cardCount -= 2;
             firstCard.DestroyCard();
             secondCard.DestroyCard();
-            cardCount -= 2;
-            if (cardCount == 0)
-            {
-                SceneManager.LoadScene("ClearScene");
-            }
+            AudioManager.instance.PlaySfx(AudioManager.Sfx.True);
         }
         else
-        {
-            audioSource.PlayOneShot(falseClip);
-
+        { 
             firstCard.CloseCard();
             secondCard.CloseCard();
+            AudioManager.instance.PlaySfx(AudioManager.Sfx.False);
         }
 
         firstCard = null;
