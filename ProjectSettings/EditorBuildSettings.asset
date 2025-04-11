@@ -7,14 +7,8 @@ EditorBuildSettings:
   m_Scenes:
   - enabled: 1
     path: Assets/Scenes/StartScene.unity
-    guid: e40734730a309ee4d9492766b03ca34b
-  - enabled: 1
-    path: Assets/Scenes/StageScene.unity
-    guid: fe5b1f2f58ff9554e84babf3fc5f7be0
+    guid: 75f31ca1a07cbaa409875c5417eda31f
   - enabled: 1
     path: Assets/Scenes/MainScene.unity
     guid: 2cda990e2423bbf4892e6590ba056729
-  - enabled: 1
-    path: Assets/Scenes/ClearScene.unity
-    guid: e27019cc732e2c44fb523994d47f1e2d
   m_configObjects: {}

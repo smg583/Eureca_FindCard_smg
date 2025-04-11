@@ -1,47 +1,61 @@
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using Unity.VisualScripting;
 using UnityEngine;
+using System.Linq;
+using UnityEngine.UI;
 
 public class Board : MonoBehaviour
 {
-    public GameObject Card;
+    public GameObject card;
+    public GameObject hiddenCard;
+    GameObject[] cards;
 
-    void Start()
+    private void Start()
     {
-        StartCoroutine(SpawnCards());
+        Place(GameConfig.level == -1 ? false : true);
+
+        Invoke("PlaceOver", 1.3f);
     }
 
-    IEnumerator SpawnCards()
+    void Place(bool isNormal)
     {
-        List<int> cardNum = new List<int>();
-        for (int i = 0; i < 10; i++)
-        {
-            cardNum.Add(i);
-            cardNum.Add(i);
-        }
-        cardNum = cardNum.OrderBy(x => Random.value).ToList();
+        int sameCardNum = isNormal ? 2 : 4;
 
-        List<Vector2> cardPos = new List<Vector2>();
-        for (int y = 0; y < 4; y++)
+        int cardNum = GameConfig.maxCardNum * sameCardNum;
+        cards = new GameObject[cardNum];
+
+        int[] arr = new int[cardNum];
+
+        int num = 0;
+        for (int i = 0; i < arr.Length; i += sameCardNum)
         {
-            for (int x = 0; x < 5; x++)
+            for (int j = 0; j < sameCardNum; j++) 
             {
-                float posX = (x * 2) - 4;
-                float posY = 2 - (y * 2);
-                cardPos.Add(new Vector2(posX, posY));
+                arr[i + j] = num;
             }
+            num++;
         }
-        cardPos = cardPos.OrderBy(x => Random.value).ToList();
+        
+        arr = arr.OrderBy(x => Random.value).ToArray();
 
-        for (int i = 0; i < 20; i++)
+        for (int i = 0; i < arr.Length; i++)
         {
-            GameObject go = Instantiate(Card, transform);
-            go.transform.position = cardPos[i];
-            go.GetComponent<Card>().Setting(cardNum[i]);
-
-            yield return new WaitForSeconds(0.1f);
+            cards[i] = Instantiate(isNormal ? card : hiddenCard, transform);
+            cards[i].GetComponent<Card>().InitImage(arr[i]);
         }
     }
-}
+
+    //카드 배치가 끝나면 타이머 및 배경음이 나도록 설정
+    void PlaceOver()
+    {
+        GameManager.instance.isPlay = true;
+        AudioManager.instance.ControlBgm(AudioManager.Bgm.Normal, true);
+    }
+
+    //게임 오버 시에 모든 카드의 던지는 애니메이션 메서드를 호출
+    public void ThrowAllCard()
+    {
+        foreach (GameObject c in cards) 
+        {
+            c.GetComponent<Card>().ThrowCardAnim();
+        }
+    }
+ }
